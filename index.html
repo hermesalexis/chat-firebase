@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Firebase</title>
+
+  <style type="text/css">
+    *{margin:0; padding:0; box-sizing: border-box;}
+    body{background: #f5f5f2; font-size: 16px; font-family: Helvetica, Arial;}
+    .wrapper{background: white; width:500px; margin: 40px auto; padding: 20px; border: 1px solid; border-color: #434C4C;}
+    form input{ font-size: 16px; padding:10px; width: 100%; }
+    form button{ background: rgb(130, 224, 255); border:none; padding: 12px; width:50px; }
+    #messages{list-style-type: none; margin: 0; padding: 0; min-height: 300px;}
+    #messages li {color:#666; padding: 10px 10px;}
+    #messages li:nth-child(even){background: #fafafa;}
+    .navbar{text-align: right;}
+    #login, #logout {display: none;}
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="navbar">
+      <a href="#" id="login">Login with Github</a>
+      <a href="#" id="logout">Logout</a>
+    </div>
+    <ul id="messages"></ul>
+      <form action="">
+        <input id="m" autocomplete="off" placeholder="Escribe Tu mensaje Aquí">
+      </form>
+  </div>
+</body>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script> 
+
+  <script src="https://www.gstatic.com/firebasejs/3.6.9/firebase.js"></script>
+
+
+  <script>
+    // Initialize Firebase
+    var config = {
+      apiKey: "AIzaSyCCEULnylyxkWBI2aR5wMZXI0RmltoYnR4",
+      authDomain: "chat-example-2a3d0.firebaseapp.com",
+      databaseURL: "https://chat-example-2a3d0.firebaseio.com",
+      storageBucket: "chat-example-2a3d0.appspot.com",
+      messagingSenderId: "351801623670"
+    };
+
+    firebase.initializeApp(config);
+    // Get a reference to the database service
+     var messages = firebase.database().ref('messages');//crea nodo de entrada messages
+
+     messages.on('child_added', function(data){ //agrega mensajes en la base de datos y los lista en la view
+         $('#messages').append('<li id="' + data.key + '">' + data.val().body + '</li>');
+     });
+
+     messages.on("child_removed", function(data){
+       $('#messages #' + data.key).remove();
+     });
+
+     $('form').on('submit', function(e){
+       e.preventDefault();
+       messages.push().set({body: $('#m').val()})
+         .catch(function(error){
+           if(error.code.toLowerCase() === "permission_denied"){
+            alert("No tienes permisos para esta acción");
+           }else{
+            alert("Error inesperado: " + error);
+           }
+         });//agrega mensaje en la base de datos de firebase
+       $('#m').val('');
+     });
+
+     $('#login').on('click', function(e){
+       e.preventDefault();
+       var provider = new firebase.auth.GithubAuthProvider();
+         firebase.auth().signInWithRedirect(provider);
+     });
+
+     $('#logout').on('click', function(e){
+       e.preventDefault();
+       firebase.auth().signOut()
+     });
+
+     firebase.auth().getRedirectResult().then(function(result){// cuando recarga la página se llama y nos dice si el usuario esta autenticado o no!
+         firebase.auth().onAuthStateChanged(function(user){//se llama siempre que la autenticación Cambia
+           if(user){ // si el usuario esta seteado (no es null)
+            $('#login').hide();
+            $('#logout').show();
+           }else{
+            $('#login').show();
+            $('#logout').hide();
+           }
+         });
+
+     });
+  </script>
+
+  
+
+</html>
